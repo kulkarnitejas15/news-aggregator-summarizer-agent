@@ -1,3 +1,4 @@
+from fastapi.middleware.cors import CORSMiddleware
 import os
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -36,6 +37,13 @@ from database import models
 # FastAPI app
 # =======================
 app = FastAPI(title="Backend API", version="0.1.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # allow all for now
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # =======================
 # REGISTER ROUTERS
@@ -48,16 +56,7 @@ app.include_router(preferences_router)
 # =======================
 models.Base.metadata.create_all(bind=engine)
 
-# =======================
-# CORS configuration
-# =======================
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+
 
 # =======================
 # Basic Routes
