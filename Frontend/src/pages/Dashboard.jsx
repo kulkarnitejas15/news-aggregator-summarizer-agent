@@ -37,7 +37,7 @@ const Dashboard = () => {
   const loadData = async () => {
     try {
       // GET USER PREFERENCES
-      const prefRes = await fetch("http://https://news-backend-gz40.onrender.com/api/preferences/", {
+      const prefRes = await fetch("https://news-backend-gz40.onrender.com/api/preferences/", {
         headers: {
           "Content-Type": "application/json",
           "user-id": userId,
@@ -52,7 +52,7 @@ const Dashboard = () => {
       setPreferences(prefData || []);
 
       // GET ALL ARTICLES
-      const articleRes = await fetch("http://https://news-backend-gz40.onrender.com/api/articles");
+      const articleRes = await fetch("https://news-backend-gz40.onrender.com/api/articles");
       const articleData = await articleRes.json();
 
       // FILTER BY PREFERENCES
