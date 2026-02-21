@@ -13,7 +13,7 @@ const FavoriteButton = ({ articleId }) => {
 
   const checkFavoriteStatus = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/favorites", {
+      const res = await fetch("http://https://news-backend-gz40.onrender.com/api/favorites", {
         headers: {
           "user-id": userId,
         },
@@ -36,7 +36,7 @@ const FavoriteButton = ({ articleId }) => {
       const method = isFavorite ? "DELETE" : "POST";
 
       await fetch(
-        `http://127.0.0.1:8000/api/articles/${articleId}/favorite`,
+        `http://https://news-backend-gz40.onrender.com/api/articles/${articleId}/favorite`,
         {
           method: method,
           headers: {

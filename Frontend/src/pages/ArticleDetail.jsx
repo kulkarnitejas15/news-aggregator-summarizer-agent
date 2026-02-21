@@ -16,7 +16,7 @@ const ArticleDetail = () => {
   useEffect(() => {
     const fetchArticle = async () => {
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/articles/${id}`);
+        const res = await fetch(`http://https://news-backend-gz40.onrender.com/api/articles/${id}`);
         const data = await res.json();
         setArticle(data);
       } catch (err) {

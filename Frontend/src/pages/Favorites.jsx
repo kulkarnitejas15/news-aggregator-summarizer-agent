@@ -29,7 +29,7 @@ const Favorites = () => {
       setError(null);
 
       const res = await fetch(
-        "http://127.0.0.1:8000/api/articles/favorites",
+        "http://https://news-backend-gz40.onrender.com/api/articles/favorites",
         {
           headers: {
             "user-id": userId,
@@ -55,7 +55,7 @@ const Favorites = () => {
   const removeFavorite = async (articleId) => {
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/api/articles/${articleId}/favorite`,
+        `http://https://news-backend-gz40.onrender.com/api/articles/${articleId}/favorite`,
         {
           method: "DELETE",
           headers: {

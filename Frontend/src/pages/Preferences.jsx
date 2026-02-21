@@ -40,7 +40,7 @@ const Preferences = () => {
   // ===============================
   const fetchCategories = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/articles/categories");
+      const res = await fetch("http://https://news-backend-gz40.onrender.com/api/articles/categories");
       const data = await res.json();
 
       const cleaned = cleanCategories(data);
@@ -55,7 +55,7 @@ const Preferences = () => {
   // ===============================
   const fetchPreferences = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/preferences/", {
+      const res = await fetch("http://https://news-backend-gz40.onrender.com/api/preferences/", {
         headers: { "user-id": userId },
       });
 
@@ -84,7 +84,7 @@ const Preferences = () => {
   try {
     setMessage("Saving...");
 
-    const res = await fetch("http://127.0.0.1:8000/api/preferences/", {
+    const res = await fetch("http://https://news-backend-gz40.onrender.com/api/preferences/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

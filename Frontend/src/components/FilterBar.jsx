@@ -7,7 +7,7 @@ const FilterBar = ({ onFilterChange }) => {
 
   // Fetch categories from backend
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/articles/categories")
+    fetch("http://https://news-backend-gz40.onrender.com/api/articles/categories")
 
       .then((res) => res.json())
       .then((data) => setCategories(data))
