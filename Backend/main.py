@@ -1,7 +1,7 @@
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import requests
 from fastapi import FastAPI, HTTPException, Depends
-from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import google.generativeai as genai
 from dotenv import load_dotenv
@@ -16,27 +16,36 @@ from routes.preferences import router as preferences_router
 load_dotenv()
 
 # =======================
-# Gemini setup
+# Gemini setup (Google API)
 # =======================
-api_key = os.getenv("GOOGLE_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-if not api_key:
+if not GOOGLE_API_KEY:
     print("Warning: GOOGLE_API_KEY not found in environment variables.")
     genai_configured = False
 else:
-    genai.configure(api_key=api_key)
+    genai.configure(api_key=GOOGLE_API_KEY)
     genai_configured = True
+
+# =======================
+# News API setup (NEW)
+# =======================
+NEWS_API_KEY = os.getenv("NEWS_API_KEY")
+
+if not NEWS_API_KEY:
+    print("Warning: NEWS_API_KEY not found in environment variables.")
 
 # =======================
 # Database imports
 # =======================
-from database.db import engine, SessionLocal, get_db
+from database.db import engine, get_db
 from database import models
 
 # =======================
 # FastAPI app
 # =======================
 app = FastAPI(title="Backend API", version="0.1.0")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # allow all for now
@@ -56,8 +65,6 @@ app.include_router(preferences_router)
 # =======================
 models.Base.metadata.create_all(bind=engine)
 
-
-
 # =======================
 # Basic Routes
 # =======================
@@ -71,6 +78,9 @@ def health_check():
     return {"status": "healthy"}
 
 
+# =======================
+# Gemini Quote Endpoint
+# =======================
 @app.get("/api/random-quote")
 def get_random_quote():
     if not genai_configured:
@@ -89,6 +99,45 @@ def get_random_quote():
             "success": True,
             "quote": response.text
         }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =======================
+# 🆕 REAL NEWS SEARCH ENDPOINT
+# =======================
+@app.get("/api/search")
+def search_news(q: str):
+    """
+    Fetch real news articles using NewsAPI
+    """
+
+    if not NEWS_API_KEY:
+        raise HTTPException(
+            status_code=500,
+            detail="NEWS_API_KEY not configured"
+        )
+
+    try:
+        url = f"https://newsapi.org/v2/everything?q={q}&language=en&apiKey={NEWS_API_KEY}"
+        response = requests.get(url)
+        data = response.json()
+
+        articles = []
+
+        for item in data.get("articles", []):
+            articles.append({
+                "id": item.get("url"),  # use url as unique id
+                "title": item.get("title"),
+                "summary": item.get("description"),
+                "content": item.get("content"),
+                "category": "General",
+                "source_url": item.get("url"),
+                "sentiment": "Neutral"
+            })
+
+        return articles
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
