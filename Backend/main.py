@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.orm import Session
 import google.generativeai as genai
 from dotenv import load_dotenv
+from pydantic import BaseModel
 
 # ✅ ROUTER IMPORTS
 from routes import articles
@@ -28,7 +29,7 @@ else:
     genai_configured = True
 
 # =======================
-# News API setup (NEW)
+# News API setup
 # =======================
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 
@@ -48,7 +49,7 @@ app = FastAPI(title="Backend API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # allow all for now
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -105,13 +106,10 @@ def get_random_quote():
 
 
 # =======================
-# 🆕 REAL NEWS SEARCH ENDPOINT
+# REAL NEWS SEARCH ENDPOINT
 # =======================
 @app.get("/api/search")
 def search_news(q: str):
-    """
-    Fetch real news articles using NewsAPI
-    """
 
     if not NEWS_API_KEY:
         raise HTTPException(
@@ -128,7 +126,7 @@ def search_news(q: str):
 
         for item in data.get("articles", []):
             articles.append({
-                "id": item.get("url"),  # use url as unique id
+                "id": item.get("url"),  # temporary id
                 "title": item.get("title"),
                 "summary": item.get("description"),
                 "content": item.get("content"),
@@ -144,17 +142,40 @@ def search_news(q: str):
 
 
 # =======================
-# TEMP DB TEST ENDPOINT
+# ⭐ SAVE SEARCH ARTICLE TO DATABASE (NEW)
 # =======================
-@app.post("/api/test-create-article")
-def create_test_article(db: Session = Depends(get_db)):
+class SaveArticleRequest(BaseModel):
+    title: str
+    content: str | None = None
+    summary: str | None = None
+    source_url: str
+    category: str | None = "General"
+    sentiment: str | None = "Neutral"
+
+
+@app.post("/api/articles/save")
+def save_search_article(
+    request: SaveArticleRequest,
+    db: Session = Depends(get_db)
+):
+    # Check duplicate using source_url
+    existing = db.query(models.Article).filter(
+        models.Article.source_url == request.source_url
+    ).first()
+
+    if existing:
+        return {
+            "article_id": existing.id,
+            "message": "Article already exists"
+        }
+
     article = models.Article(
-        title="Test Article",
-        content="This is a test article content",
-        source_url="https://example.com",
-        category="Technology",
-        summary="This is a test summary",
-        sentiment="Positive"
+        title=request.title,
+        content=request.content or "",
+        summary=request.summary or "",
+        source_url=request.source_url,
+        category=request.category,
+        sentiment=request.sentiment,
     )
 
     db.add(article)
@@ -162,16 +183,14 @@ def create_test_article(db: Session = Depends(get_db)):
     db.refresh(article)
 
     return {
-        "success": True,
-        "message": "Test article created",
-        "article_id": article.id
+        "article_id": article.id,
+        "message": "Article saved successfully"
     }
 
 
 # =======================
 # Scraper Pipeline Endpoint
 # =======================
-from pydantic import BaseModel
 from services.scraper import scrape_article
 from services.llm_processor import process_article
 
@@ -187,13 +206,9 @@ def scrape_articles(request: URLRequest, db: Session = Depends(get_db)):
 
     for url in request.urls:
         try:
-            # ---------- Scrape ----------
             scraped = scrape_article(url)
-
-            # ---------- AI Processing ----------
             ai_result = process_article(scraped["content"])
 
-            # ---------- Save to DB ----------
             article = models.Article(
                 title=scraped["title"],
                 content=scraped["content"],
