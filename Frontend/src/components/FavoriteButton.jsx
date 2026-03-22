@@ -1,53 +1,109 @@
 import { useState, useEffect } from "react";
 
-const FavoriteButton = ({ articleId }) => {
+const FavoriteButton = ({ article }) => {
+  const API = import.meta.env.VITE_API_BASE_URL;
   const [isFavorite, setIsFavorite] = useState(false);
-  const userId = "test_user"; // later will come from Firebase login
+  const [dbArticleId, setDbArticleId] = useState(null);
+  const userId = "test_user"; // later from Firebase auth
 
-  // -----------------------------
-  // Check if article already favorite
-  // -----------------------------
+  // =============================
+  // Check if already favorite
+  // =============================
   useEffect(() => {
-    checkFavoriteStatus();
-  }, [articleId]);
+    if (article) {
+      checkFavoriteStatus();
+    }
+  }, [article]);
 
   const checkFavoriteStatus = async () => {
     try {
-      const res = await fetch("http://https://news-backend-gz40.onrender.com/api/favorites", {
+      const res = await fetch(`${API}/api/favorites`, {
         headers: {
           "user-id": userId,
         },
       });
 
+      if (!res.ok) return;
+
       const data = await res.json();
 
-      const exists = data.some((item) => item.id === articleId);
-      setIsFavorite(exists);
+      // if article exists in favorites
+      const exists = data.find(
+        (item) =>
+          item.source_url === article.source_url ||
+          item.id === article.id
+      );
+
+      if (exists) {
+        setIsFavorite(true);
+        setDbArticleId(exists.id);
+      }
     } catch (error) {
-      console.error("Error checking favorite:", error);
+      console.error("Favorite check error:", error);
     }
   };
 
-  // -----------------------------
+  // =============================
+  // Save search result to DB
+  // =============================
+  const saveArticleToDB = async () => {
+    try {
+      const res = await fetch(`${API}/api/articles/save`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: article.title,
+          summary: article.summary,
+          content: article.content,
+          source_url: article.source_url,
+          category: article.category || "General",
+          sentiment: article.sentiment || "Neutral",
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to save article");
+
+      const data = await res.json();
+      return data.article_id;
+    } catch (error) {
+      console.error("Error saving article:", error);
+      return null;
+    }
+  };
+
+  // =============================
   // Toggle favorite
-  // -----------------------------
+  // =============================
   const toggleFavorite = async () => {
     try {
+      let articleId = dbArticleId || article.id;
+
+      // If article is from search (id is URL string)
+      if (!dbArticleId && typeof article.id !== "number") {
+        articleId = await saveArticleToDB();
+        if (!articleId) return;
+      }
+
       const method = isFavorite ? "DELETE" : "POST";
 
-      await fetch(
-        `http://https://news-backend-gz40.onrender.com/api/articles/${articleId}/favorite`,
+      const res = await fetch(
+        `${API}/api/articles/${articleId}/favorite`,
         {
-          method: method,
+          method,
           headers: {
             "user-id": userId,
           },
         }
       );
 
+      if (!res.ok) throw new Error("Favorite action failed");
+
       setIsFavorite(!isFavorite);
+      setDbArticleId(articleId);
     } catch (error) {
-      console.error("Error toggling favorite:", error);
+      console.error("Toggle favorite error:", error);
     }
   };
 

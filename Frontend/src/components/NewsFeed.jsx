@@ -1,9 +1,12 @@
 import { useNavigate } from "react-router-dom";
+import ArticleCard from "./ArticleCard";
+import FavoriteButton from "./FavoriteButton";
 
-const NewsFeed = ({ articles }) => {
+const NewsFeed = ({ articles = [] }) => {
   const navigate = useNavigate();
 
-  if (!articles || articles.length === 0) {
+  // Show message if no articles
+  if (!articles.length) {
     return (
       <p className="text-center text-gray-500 mt-10">
         No articles available.
@@ -11,41 +14,60 @@ const NewsFeed = ({ articles }) => {
     );
   }
 
+  // Handle card click
+  const handleArticleClick = (article) => {
+    // DB article → open detail page
+    if (typeof article.id === "number") {
+      navigate(`/articles/${article.id}`);
+      return;
+    }
+
+    // Search article → open source URL
+    if (article.source_url) {
+      window.open(article.source_url, "_blank");
+    }
+  };
+
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
-      {articles.map((article) => (
-        <div
-          key={article.id}
-          onClick={() => navigate(`/articles/${article.id}`)}
-          className="p-5 rounded-2xl shadow bg-white hover:shadow-lg transition cursor-pointer"
-        >
-          {/* Title */}
-          <h2 className="font-bold text-lg">
-            {article.title}
-          </h2>
+      {articles.map((article, index) => {
+        // ✅ SAFE FALLBACK VALUES (prevents crash)
+        const safeArticle = {
+          id: article?.id ?? `search-${index}`,
+          title: article?.title ?? "Untitled",
+          summary:
+            article?.summary ||
+            article?.content?.slice(0, 150) ||
+            "No summary available",
+          category: article?.category ?? "General",
+          sentiment: article?.sentiment ?? "Neutral",
+          source_url: article?.source_url ?? null,
+        };
 
-          {/* Category */}
-          <p className="text-sm text-gray-500 mt-1">
-            {article.category || "General"}
-          </p>
+        return (
+          <div
+            key={safeArticle.id}
+            className="cursor-pointer"
+            onClick={() => handleArticleClick(safeArticle)}
+          >
+            {/* Article Card */}
+            <ArticleCard
+              title={safeArticle.title}
+              summary={safeArticle.summary}
+              category={safeArticle.category}
+              sentiment={safeArticle.sentiment}
+            />
 
-          {/* Summary */}
-          <p className="mt-3 text-gray-700 text-sm">
-            {article.summary?.slice(0, 150)}...
-          </p>
-
-          {/* Footer */}
-          <div className="flex justify-between items-center mt-4">
-            <span className="text-xs text-gray-400">
-              {article.sentiment || "Neutral"}
-            </span>
-
-            <span className="text-blue-500 text-sm font-medium">
-              Open →
-            </span>
+            {/* Favorite button (prevent card click) */}
+            <div
+              className="mt-3"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <FavoriteButton article={safeArticle} />
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

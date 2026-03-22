@@ -1,33 +1,34 @@
-import SentimentBadge from "./SentimentBadge";
-
-const ArticleCard = ({ title, summary, category, sentiment, date }) => {
+const ArticleCard = ({
+  title = "No Title",
+  summary = "No summary available",
+  category = "General",
+  sentiment = "Neutral",
+}) => {
   return (
-    <div className="border rounded p-4 shadow-sm hover:shadow-md transition">
+    <div className="p-5 rounded-2xl shadow bg-white hover:shadow-lg transition">
+      <h2 className="font-bold text-lg">{title}</h2>
 
-      {/* Category + Date */}
-      <div className="flex justify-between items-center mb-2">
-        <span className="text-sm font-semibold text-blue-600">
-          {category}
-        </span>
-
-        <span className="text-xs text-gray-500">
-          {date}
-        </span>
-      </div>
-
-      {/* Title */}
-      <h2 className="text-lg font-bold mb-2">
-        {title}
-      </h2>
-
-      {/* Summary */}
-      <p className="text-gray-600 mb-3">
-        {summary}
+      <p className="text-sm text-gray-500 mt-1">
+        {category || "General"}
       </p>
 
-      {/* Sentiment Badge (Issue 16) */}
-      <SentimentBadge sentiment={sentiment} />
+      <p className="mt-3 text-gray-700 text-sm">
+        {summary ? summary.slice(0, 150) + "..." : "No summary available"}
+      </p>
 
+      <div className="mt-3">
+        <span
+          className={`px-3 py-1 rounded-full text-sm ${
+            sentiment === "Positive"
+              ? "bg-green-100 text-green-700"
+              : sentiment === "Negative"
+              ? "bg-red-100 text-red-700"
+              : "bg-gray-100 text-gray-700"
+          }`}
+        >
+          {sentiment || "Neutral"}
+        </span>
+      </div>
     </div>
   );
 };

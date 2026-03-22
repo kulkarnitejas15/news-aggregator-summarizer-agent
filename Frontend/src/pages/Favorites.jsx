@@ -1,45 +1,43 @@
 import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
-import Pagination from "../components/Pagination"; // ✅ NEW
+import Pagination from "../components/Pagination";
 
 const Favorites = () => {
+  const API = import.meta.env.VITE_API_BASE_URL;
+
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ✅ Pagination state
+  // pagination
   const [currentPage, setCurrentPage] = useState(1);
   const favoritesPerPage = 5;
 
-  // temporary user id (later from Firebase)
   const userId = "test_user";
 
   useEffect(() => {
     fetchFavorites();
   }, []);
 
-  // ✅ Reset page when favorites change
   useEffect(() => {
     setCurrentPage(1);
   }, [favorites]);
 
+  // =========================
+  // FETCH FAVORITES
+  // =========================
   const fetchFavorites = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const res = await fetch(
-        "http://https://news-backend-gz40.onrender.com/api/articles/favorites",
-        {
-          headers: {
-            "user-id": userId,
-          },
-        }
-      );
+      const res = await fetch(`${API}/api/favorites`, {
+        headers: {
+          "user-id": userId,
+        },
+      });
 
-      if (!res.ok) {
-        throw new Error("Failed to fetch favorites");
-      }
+      if (!res.ok) throw new Error("Failed to fetch favorites");
 
       const data = await res.json();
       setFavorites(data || []);
@@ -51,11 +49,13 @@ const Favorites = () => {
     }
   };
 
-  // remove favorite
+  // =========================
+  // REMOVE FAVORITE
+  // =========================
   const removeFavorite = async (articleId) => {
     try {
       const res = await fetch(
-        `http://https://news-backend-gz40.onrender.com/api/articles/${articleId}/favorite`,
+        `${API}/api/articles/${articleId}/favorite`,
         {
           method: "DELETE",
           headers: {
@@ -64,11 +64,8 @@ const Favorites = () => {
         }
       );
 
-      if (!res.ok) {
-        throw new Error("Failed to remove favorite");
-      }
+      if (!res.ok) throw new Error("Failed to remove favorite");
 
-      // update UI instantly
       setFavorites((prev) =>
         prev.filter((article) => article.id !== articleId)
       );
@@ -78,13 +75,11 @@ const Favorites = () => {
   };
 
   // =========================
-  // PAGINATION LOGIC
+  // PAGINATION
   // =========================
   const totalPages = Math.ceil(favorites.length / favoritesPerPage);
-
   const indexOfLast = currentPage * favoritesPerPage;
   const indexOfFirst = indexOfLast - favoritesPerPage;
-
   const currentFavorites = favorites.slice(indexOfFirst, indexOfLast);
 
   if (loading) return <p className="p-6">Loading favorites...</p>;
@@ -96,21 +91,16 @@ const Favorites = () => {
       <div className="p-6">
         <h1 className="text-3xl font-bold mb-6">My Favorites</h1>
 
-        {error && (
-          <p className="text-red-500 mb-4">{error}</p>
-        )}
+        {error && <p className="text-red-500 mb-4">{error}</p>}
 
         {!favorites.length && !error && (
           <p className="text-gray-500">No favorites yet.</p>
         )}
 
-        {/* Favorite Cards */}
+        {/* Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {currentFavorites.map((article) => (
-            <div
-              key={article.id}
-              className="p-5 rounded-2xl shadow bg-white"
-            >
+            <div key={article.id} className="p-5 rounded-2xl shadow bg-white">
               <h2 className="font-bold text-lg">{article.title}</h2>
 
               <p className="text-sm text-gray-500 mt-1">
@@ -131,7 +121,6 @@ const Favorites = () => {
           ))}
         </div>
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="mt-8 flex justify-center">
             <Pagination

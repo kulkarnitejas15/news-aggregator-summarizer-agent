@@ -9,28 +9,37 @@ import FavoriteButton from "../components/FavoriteButton";
 const ArticleDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const API = import.meta.env.VITE_API_BASE_URL;
 
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     const fetchArticle = async () => {
       try {
-        const res = await fetch(`http://https://news-backend-gz40.onrender.com/api/articles/${id}`);
+        const res = await fetch(`${API}/api/articles/${id}`);
+
+        if (!res.ok) {
+          throw new Error("Article not found");
+        }
+
         const data = await res.json();
         setArticle(data);
       } catch (err) {
         console.error("Error fetching article:", err);
+        setError(true);
       } finally {
         setLoading(false);
       }
     };
 
     fetchArticle();
-  }, [id]);
+  }, [id, API]);
 
   if (loading) return <p className="p-6">Loading article...</p>;
-  if (!article) return <p className="p-6">Article not found.</p>;
+  if (error || !article)
+    return <p className="p-6">Article not found.</p>;
 
   return (
     <div>
@@ -55,12 +64,11 @@ const ArticleDetail = () => {
           Category: {article.category}
         </p>
 
-        {/* ⭐ Enhanced Sentiment Section (Issue 16) */}
+        {/* Sentiment Section */}
         <div className="mb-6 p-4 border rounded-lg bg-gray-50">
           <p className="text-sm text-gray-600 mb-2 font-medium">
             Article Sentiment
           </p>
-
           <SentimentBadge sentiment={article.sentiment} />
         </div>
 
@@ -78,14 +86,16 @@ const ArticleDetail = () => {
         </div>
 
         {/* Source Link */}
-        <a
-          href={article.source_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-500 hover:underline"
-        >
-          Read original article →
-        </a>
+        {article.source_url && (
+          <a
+            href={article.source_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:underline"
+          >
+            Read original article →
+          </a>
+        )}
       </div>
     </div>
   );
